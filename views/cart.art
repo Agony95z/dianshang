@@ -1,0 +1,186 @@
+{{extend './layouts/frame.art'}}
+{{block 'head'}}
+<link rel="stylesheet" href="/assets/css/page-cart.css">
+{{/block}}
+{{block 'content'}}
+<div class="py-container">
+  <div class="allgoods">
+
+  </div>
+</div>
+{{/block}}
+{{block 'script'}}
+<script type="text/html" id="carTemplate">
+  <br>
+    {{if !user}}
+    <div class="sui-msg msg-large msg-tips">
+      <div class="msg-con"> 您还没有登录！登录后购物车的商品将保存到您账号中
+        <a href="/login" class="sui-btn btn-small btn-warning">立即登录</a>
+      </div>
+      <s class="msg-icon"></s>
+    </div>
+    {{/if}}
+      <div class="cart-main">
+        <div class="yui3-g cart-th">
+          <!-- 自己手动添加的复选框 -->
+          <div class="yui3-u-1-24"><input type="checkbox" checked></div>
+          <div class="yui3-u-12-24">商品</div>
+          <div class="yui3-u-3-24">单价（元）</div>
+          <div class="yui3-u-3-24">数量</div>
+          <div class="yui3-u-4-24">小计（元）</div>
+          <div class="yui3-u-1-24">操作</div>
+        </div>
+        <div class="cart-item-list">
+          <div class="cart-body">
+            <div class="cart-list">
+            <? var countAmount = 0 ?>
+            <? var totalPrice = 0 ?>
+            <?for(var i=0;i<list.length;i++){?>
+            <? var item = list[i] ?>
+            <? countAmount += +item.amount ?>
+            <? totalPrice += item.amount*item.price ?>
+                <ul class="goods-list yui3-g">
+                <!-- 自己手动添加的复选框 -->
+                <li class="yui3-u-1-24">
+                  <input data-id="<?=item.id?>" type="checkbox" checked>
+                </li>
+                <li class="yui3-u-12-24">
+                  <div class="good-item">
+                    <div class="item-img">
+                      <img src="<?=item.thumbnail?>">
+                    </div>
+                    <div class="item-msg"><?=item.name?></div>
+                  </div>
+                </li>
+                <li class="yui3-u-3-24">
+                  <span class="price">&yen;<?=item.price?></span>
+                </li>
+                <li class="yui3-u-3-24">
+                  <a href="javascript:;" data-id="<?=item.id?>" class="increment mins">-</a>
+                  <input autocomplete="off" type="text" value="<?=item.amount?>"  class="itxt">
+                  <a href="javascript:;" data-id="<?=item.id?>" class="increment plus">+</a>
+                </li>
+                <li class="yui3-u-4-24">
+                  <span class="sum"><?=(item.amount*item.price).toFixed(2)?></span>
+                </li>
+                <li class="yui3-u-1-24">
+                  <a href="javascript:;" data-id="<?=item.id?>" id="btn_delete">删除</a>
+                </li>
+              </ul>
+           <?}?>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cart-tool">
+        <div class="money-box">
+          <div class="sumprice">
+            <span><strong><?=countAmount?></strong> 件商品</span><br>
+            <span><em>总价（不含运费）：</em><i class="summoney">¥<?=totalPrice.toFixed(2)?></i></span>
+          </div>
+          <div class="sumbtn">
+            <a class="sum-btn" href="javascript:;">结算</a>
+          </div>
+        </div>
+      </div>
+</script>
+<script src="/assets/js/template-web.js"></script>
+<script>
+  $(function () {
+      //使用art-template 如果前后端都在同时使用 需要配置不同的解析规则
+      // ?需要转移 因为在正则表达式中?有特殊含义
+      template.defaults.rules[0].test = /<\?(#?)((?:==|=#|[=-])?)[ \t]*([\w\W]*?)[ \t]*(-?)\?>/;
+      // 获取购物车列表数据 且完成渲染 
+      // 如果不用ajax发请求 还是需要不同的路由去对应相对的功能 实现增删改查  不用ajax怎么做
+      $.get('/cart/list', function (data) {
+        // 缓存data 用于增删  
+        window.list = data.list
+        // console.log(data) //{list:[]}
+        $('.allgoods').html(template('carTemplate', data))
+      })
+      // -------------------------------------------
+      // 功能2 点击加减号实现加减功能 
+      // 通过id 找到对应的商品 操作它的amount 来修改数量
+      //  两个a 链接 都有.increment
+      $('.allgoods').on('click', '.increment', function () {
+        // 获取 点击某个商品的id
+        const id = $(this).data('id')
+        // 获取input 的值
+        let amount = $(this).siblings('input').val()
+        // 区分操作是加还是减
+        const isMin = $(this).hasClass('mins')
+        if (isMin) {
+          if (amount < 2) return
+          amount--
+        } else {
+          amount++
+        }
+        console.log(amount)
+        console.log(typeof (amount))
+
+        console.log(list)
+        // 提交给后台
+        $.post('/cart/edit', {
+          id,
+          amount
+        }, function (data) {
+          console.log(data)
+          if (data.success) {
+            // 修改当前商品的数量
+            // 修改商品的总数量
+            // 修改商品总价格
+            // 修改商品小计
+            // 修改完以后重新渲染
+            const card = list.find(item => item.id == id)
+            card.amount = amount
+            $('.allgoods').html(template('carTemplate', {
+              list
+            }))
+            alert('修改成功')
+          } else {
+            alert('操作失败，请刷新页面尝试！')
+          }
+        })
+      })
+    }).on('click', '#btn_delete', function () {
+      // -------------------------------------------------------------------------
+      // 删除功能
+      const id = this.dataset.id //H5的 api 获取 data-id中的 值
+      $.post('/cart/remove', {
+        id
+      }, function (data) {
+        // console.log(data)
+        // 修改缓存的数据 找到要删除的商品对应的id 和 它在数组中对应的 索引
+        if (data.success) {
+          const index = list.findIndex(item => item.id == id)
+          list.splice(index, 1)
+          $('.allgoods').html(template('carTemplate', {
+            list
+          }))
+          alert('删除成功')
+        } else {
+          alert('操作失败，请刷新页面尝试！')
+        }
+      })
+    })
+    // 全选反选
+    .on('change', '.cart-th [type="checkbox"]', function () {
+      //像  checkbox radio select 使用change事件
+      $('.cart-body [type="checkbox"]').prop('checked', $(this).prop('checked'))
+    })
+    // 提交订单 
+    .on('click', '.sum-btn', function () {
+      // 被选中的商品  $inputs 是个jQuery对象 伪数组  
+        const $inputs = $('.cart-body [type="checkbox"]:checked')
+        const idArr = []
+        // .each是jQuery提供的api
+        $inputs.each(function (i, item) {
+          //当前的input dom 对象
+          idArr.push(item.dataset.id)
+        })
+        // 后台结算 接口
+        location.href = '/order/create?ids=' + idArr.join(',')
+      })
+</script>
+{{/block}}

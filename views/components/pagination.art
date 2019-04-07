@@ -1,0 +1,38 @@
+<div class="fr page">
+    <div class="sui-pagination pagination-large">
+    <ul>
+        {{if page > 1}}
+        <li class="prev"><a href="{{getUrl(+page-1)}}">«上一页</a></li>
+        {{else}}
+        <li class="prev disabled"><a href="javascript:;">«上一页</a></li>
+        {{/if}}
+        {{if begin > 1}}
+        <li class="dotted"><span>...</span></li>
+        {{/if}}
+        <% for(let i = begin; i <= end; i++) { %>
+            <li class="{{page==i?'active':''}}"><a href="{{getUrl(i)}}">{{i}}</a></li>
+       <% } %>
+        
+        {{if end < total}}
+        <li class="dotted"><span>...</span></li>
+        {{/if}}
+        {{if page < total}}
+        <li class="next"><a href="{{getUrl(+page+1)}}">下一页»</a></li>
+        {{else}}
+        <li class="next disabled" ><a href="javascript:;">下一页»</a></li>
+        {{/if}}
+    </ul>
+    <div>
+        <span>共{{total}}页</span>
+        <form style="display:inline-block" autocomplete="off">
+        {{each query}}
+           {{if $index !== 'page'}}
+            <input type="hidden" name="{{$index}}" value="{{$value}}" class="page-num">
+           {{/if}}
+        {{/each}}
+            到第 <input type="text" name="page" class="page-num"> 页 
+            <button class="page-confirm" type="submit">确定</button>
+        </form>
+    </div>
+    </div>
+</div>

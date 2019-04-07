@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        .error {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        .error.c404 {
+            background: url(/assets/img/404.png) no-repeat center /cover;
+        }
+
+        .error.c500 {
+            background: url(/assets/img/500.png) no-repeat center /cover;
+        }
+    </style>
+</head>
+<body>
+<div class="error {{status===404?'c404':'c500'}}"></div>
+</body>
+</html>
